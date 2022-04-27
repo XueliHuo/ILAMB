@@ -284,7 +284,7 @@ def CompositeScores(tree,M):
             node.score /= sum_weights
             np.seterr(over='raise',under='raise')
     TraversePostorder(tree,_loadScores)
-    
+
 ConfrontationTypes = { None              : Confrontation,
                        "ConfNBP"         : ConfNBP,
                        "ConfTWSA"        : ConfTWSA,
@@ -313,7 +313,7 @@ class Scoreboard():
         self.run_title = run_title
         self.regions = regions
         self.rmse_score_basis = rmse_score_basis
-        
+
         if (master and not os.path.isdir(self.build_dir)): os.mkdir(self.build_dir)
 
         self.tree = ParseScoreboardConfigureFile(filename)
@@ -321,9 +321,9 @@ class Scoreboard():
 
         def _initConfrontation(node):
             if not node.isLeaf(): return
-            
+
             node.rmse_score_basis = self.rmse_score_basis
-            
+
             # if the user hasn't set regions, use the globally defined ones
             if node.regions is None: node.regions = regions
 
@@ -343,7 +343,7 @@ class Scoreboard():
                 node.confrontation.cweight = node.weight*node.parent.weight
                 node.confrontation.extents = extents
 
-                if verbose and master: print(("    {0:>%d}\033[92m Initialized\033[0m" % max_name_len).format(node.confrontation.longname))
+                if verbose and master: print(("    {0:>%d}\033[92m There is Initialized\033[0m" % max_name_len).format(node.confrontation.longname))
 
             except MisplacedData:
 
@@ -406,12 +406,12 @@ class Scoreboard():
         with open(os.path.join(self.build_dir,filename),mode='w') as f:
             json.dump(scalars, f)
         return global_scores,rel_tree
-        
+
     def createHtml(self,M,filename="index.html"):
         global models
         from ILAMB.generated_version import version as ilamb_version
         r = Regions()
-        run_title = "ILAMB Benchmarking" if self.run_title is None else self.run_title[0] 
+        run_title = "ILAMB Benchmarking" if self.run_title is None else self.run_title[0]
         models = [m.name for m in M]
         maxM = max([len(m) for m in models])
         px = int(round(maxM*6.875))
@@ -455,7 +455,7 @@ class Scoreboard():
 	      return children;
 	  }
 	  $('.parent').on('click', function() {
-	      var children = getH1Children($(this));	 
+	      var children = getH1Children($(this));
 	      $.each(children, function() {
 		  $(this).toggle();
 	      })
@@ -470,7 +470,7 @@ class Scoreboard():
       });
 
       function pageLoad() {
-	  
+
 	  $("table").delegate('td','mouseover mouseleave', function(e) {
 	      var table = document.getElementById("scoresTable");
 	      if (e.type == 'mouseover') {
@@ -485,7 +485,7 @@ class Scoreboard():
 
 	  colorTable();
       }
-      
+
       function printRow(table,row,array,cmap) {
 	  if(typeof array == 'undefined'){
 	      for(var i = 1, col; col = table.rows[row].cells[i]; i++) {
@@ -510,16 +510,16 @@ class Scoreboard():
 	      table.rows[row].cells[col+1].style.backgroundColor = clr;
 	  }
       }
-      
+
       function colorTable() {
-	  	  
+
         $.getJSON("scalars.json", function(data) {
           var scalars = data;
 	  var scalar_option = document.getElementById("ScalarOption");
           var region_option = document.getElementById("RegionOption");
 	  var scalar_name   = scalar_option.options[scalar_option.selectedIndex].value;
 	  scalar_name  += " " + region_option.options[region_option.selectedIndex].value;
-	  
+
 	  var PuOr = ['#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788'];
 	  var GnRd = ['#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837'];
 	  var cmap = GnRd;
@@ -552,7 +552,7 @@ class Scoreboard():
 	  for(var col=0;col<cmap.length;col++){
 	      table.rows[row].cells[col].style.backgroundColor = cmap[col];
 	  }
-	});  
+	});
       }
     </script>
     <style type="text/css">
@@ -593,11 +593,11 @@ class Scoreboard():
           border: 2px solid;
       }
     </style>
-    
+
   </head>
   <body onload="pageLoad()">
 
-    <div data-role="page" id="MeanState">      
+    <div data-role="page" id="MeanState">
       <div data-role="header" data-position="fixed" data-tap-toggle="false">
         <h1>%s</h1>
       </div>
@@ -622,7 +622,7 @@ class Scoreboard():
             if region == "global" or len(self.regions) == 1:
                 opts  = ' selected="selected"'
             html += """
-          <option value='%s'%s>%s</option>""" % (region,opts,rname)        
+          <option value='%s'%s>%s</option>""" % (region,opts,rname)
         html += """
       </select>
 
@@ -632,13 +632,13 @@ class Scoreboard():
 	  <label for="colorblind" >Colorblind colors</label>
 	</fieldset>
       </form>
-      
+
       <center>
 	<table class="table-header-rotated" id="scoresTable">
 	  <thead>
             <tr>
               <th></th>"""
-        
+
         for m in M:
             html += """
               <th class="rotate"><div>%s</div></th>""" % (m.name)
@@ -652,7 +652,7 @@ class Scoreboard():
         global row_color
         global_html = ""
         row_color = ""
-            
+
         def GenRowHTML(node):
             row_class = ['','parent','child_variable','child_dataset']
             global global_html
@@ -679,7 +679,7 @@ class Scoreboard():
                                                        node.name.replace(" ",""),
                                                        node.name.replace(" ",""))
                 row_header = '<a href="%s" target="_blank">%s</a>' % (row_link,row_header)
-            
+
             global_html += """
 	    <tr class="%s" bgcolor="%s">
               <td class="row-label">%s</td>""" % (row_class[d],row_color,row_header)
@@ -691,7 +691,7 @@ class Scoreboard():
                     if "/" in node.name:
                         fname = node.output_path[:-1] if node.output_path.endswith("/") else node.output_path
                         fname = fname.split("/")[-1]
-                        path = os.path.join(path,"%s.html#Relationships" % (fname))                        
+                        path = os.path.join(path,"%s.html#Relationships" % (fname))
                     else:
                         path = os.path.join(path,"%s.html" % (node.name))
                     if path.startswith("/"): path = path[1:]
@@ -710,7 +710,7 @@ class Scoreboard():
 	  </tbody>
 	</table>
 
-	
+
 	<p>Relative Scale
 	<table class="table-header-rotated" id="scoresLegend">
 	  <tbody>
@@ -807,13 +807,13 @@ class Scoreboard():
              <input type="checkbox" class="scacol" value='scacol' id="checkboxsca">
              <span class="el-checkbox-style  pull-right"></span>
           </label>
-          <select class="select-choice-sca" id="select-choice-mini-sca" style="width:75%"> 
+          <select class="select-choice-sca" id="select-choice-mini-sca" style="width:75%">
              <option value="0" selected> Not normalized </option>
              <option value="1"> Normalized [x-mean(x)]/sigma(x) </option>
              <option value="2"> Normalized [-1:1] </option>
              <option value="3"> Normalized [ 0:1] </option>
           </select>
-          <select class="select-choice-map" id="select-choice-mini-map" style="width:75%"> 
+          <select class="select-choice-map" id="select-choice-mini-map" style="width:75%">
              <option value="0" selected> ILAMB color mapping </option>
              <option value="1"> Linear color mapping </option>
              <option value="2"> Linear color mapping reverse </option>
@@ -822,12 +822,12 @@ class Scoreboard():
       <hr>
       <section class="menu-section">
           <h3 class="menu-section-title">Examples</h3>
-          <select class="select-choice-ex" id="select-choice-mini-ex" style="width:75%"> 
+          <select class="select-choice-ex" id="select-choice-mini-ex" style="width:75%">
              <option value="cmec_ilamb_example_addsource.json"> CMEC ILAMB</option>
              <option value="pmp_enso_tel.json"> CMEC PMP</option>
           </select>
           <h3 class="menu-section-title">Logo</h3>
-          <select class="select-choice-logo" id="select-choice-mini-logo" style="width:75%"> 
+          <select class="select-choice-logo" id="select-choice-mini-logo" style="width:75%">
              <option value="rubisco_logo.png"> RUBISCO</option>
              <option value="cmec_logo.png"> CMEC</option>
              <option value="pmp_logo.png"> PMP</option>
@@ -878,7 +878,7 @@ class Scoreboard():
         <h1 class="title">LMT Unified Dashboard</h1>
       </header>
       <section style="text-align:center">
-        <input name="file" id="file" type="file" onchange="loadlocJson()"/> 
+        <input name="file" id="file" type="file" onchange="loadlocJson()"/>
       </section>
       <section>
         <div class="tabDiv" id="mytab">
@@ -926,9 +926,9 @@ class Scoreboard():
                 "udcNormAxis": "row",
                 "logofile": "None"
             },f)
-        
 
-        
+
+
 def GenerateRelationshipTree(S,M):
 
     # Create a tree which mimics the scoreboard for relationships, but

@@ -126,7 +126,7 @@ class ModelResult():
                         experiment_id = dataset.experiment_id
                     if source_id is None and "source_id" in dataset.ncattrs():
                         source_id = dataset.source_id
-                        
+
                     # populate dictionary for which variables are in which files
                     for key in dataset.variables.keys():
                         if key not in variables:
@@ -148,7 +148,7 @@ class ModelResult():
             if source_id is not None: d.append(source_id)
             if experiment_id is not None: d.append(experiment_id)
             self.description = " ".join(d)
-            
+
         # determine spatial extents
         lats = [key for key in variables.keys() if (key.lower().startswith("lat" ) or
                                                     key.lower().  endswith("lat" ))]
@@ -187,7 +187,7 @@ class ModelResult():
         """
         def _shiftLon(lon):
             return (lon<=180)*lon + (lon>180)*(lon-360) + (lon<-180)*360
-        
+
         # Are there cell areas associated with this model?
         area_name = None
         area_name = "area"      if "area"      in self.variables.keys() else area_name
@@ -209,7 +209,7 @@ class ModelResult():
                 if y[ 0,0] > y[ 0,1]: y[ 0,0] = -180.
                 if y[-1,0] > y[-1,1]: y[-1,1] = +180.
             self.cell_areas = il.CellAreas(None,None,lat_bnds=x,lon_bnds=y)
-            
+
         # Now we do the same for land fractions
         frac_name = None
         frac_name = "landfrac" if "landfrac" in self.variables.keys() else frac_name
