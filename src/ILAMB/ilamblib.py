@@ -10,6 +10,9 @@ import numpy as np
 import logging,re,os
 import cftime as cf
 from pkg_resources import parse_version, get_distribution
+#import sys
+
+#np.set_printoptions(threshold=sys.maxsize)
 
 logger = logging.getLogger("%i" % MPI.COMM_WORLD.rank)
 
@@ -299,7 +302,7 @@ def GetTime(var,t0=None,tf=None,convert_calendar=True,ignore_time_array=True):
     except:
         msg = "Error in computing the datum: t.units = %s, t.calendar = %s" % (t.units,t.calendar)
         raise ValueError(msg)
-        
+
     if ((abs(datum_shift) > 60) or (convert_calendar and t.calendar != "noleap")):
         T  = cf.num2date(T ,units=t.units,calendar=t.calendar)
         TB = cf.num2date(TB,units=t.units,calendar=t.calendar)
@@ -680,7 +683,7 @@ def FromNetCDF4(filename,variable_name,alternate_vars=[],t0=None,tf=None,group=N
 
     # Copy attributes into a dictionary
     attr = { attr: var.getncattr(attr) for attr in var.ncattrs() }
-    
+
     # Check on dimensions
     time_name  = [name for name in var.dimensions if "time" in name.lower()]
     lat_name   = [name for name in var.dimensions if "lat"  in name.lower()]
@@ -837,7 +840,7 @@ def FromNetCDF4(filename,variable_name,alternate_vars=[],t0=None,tf=None,group=N
             if "lon" in key: lon_name.append(key)
             if "altitude" in key: depth_name = key
         if len(lat_name) > 1: lat_name = [n for n in lat_name if grp.variables[n].dimensions[0] in var.dimensions]
-        if len(lon_name) > 1: lon_name = [n for n in lon_name if grp.variables[n].dimensions[0] in var.dimensions]        
+        if len(lon_name) > 1: lon_name = [n for n in lon_name if grp.variables[n].dimensions[0] in var.dimensions]
         if len(lat_name) > 0: lat   = grp.variables[lat_name[0]][...]
         if len(lon_name) > 0: lon   = grp.variables[lon_name[0]][...]
         if depth_name is not None: depth = grp.variables[depth_name][...]
@@ -875,13 +878,20 @@ def FromNetCDF4(filename,variable_name,alternate_vars=[],t0=None,tf=None,group=N
             lon_bnd      = np.zeros((lon.size,2))
             lon_bnd[:,0] = lon_bnds[:-1]
             lon_bnd[:,1] = lon_bnds[+1:]
-
+#    print(variable_name)
     # handle incorrect or absent masking of arrays
     if type(v) != type(np.ma.empty(1)):
         mask = np.zeros(v.shape,dtype=int)
         if "_FillValue"    in var.ncattrs(): mask += (np.abs(v-var._FillValue   )<1e-12)
         if "missing_value" in var.ncattrs(): mask += (np.abs(v-var.missing_value)<1e-12)
-        v = np.ma.masked_array(v,mask=mask,copy=False)
+#        if variable_name == 'albedo': print(var._FillValue)
+#        if variable_name == 'albedo': print(mask)
+#        if variable_name == 'albedo': print(v[0,:,:]-var._FillValue)
+        if variable_name == 'albedo':
+            v = np.ma.masked_invalid(v)
+        else:
+            v = np.ma.masked_array(v,mask=mask,copy=False)
+#        if variable_name == 'albedo': print(v)
 
     if "units" in var.ncattrs():
         units = FixDumbUnits(var.units)
@@ -1042,7 +1052,7 @@ def AnalysisMeanStateSites(ref,com,**keywords):
         skip_iav  = (skip_iav .lower() == "true")
     if type(skip_cycle) == type(""):
         skip_cycle = (skip_cycle.lower() == "true")
-        
+
     # Only study the annual cycle if it makes sense
     if    not ref.monthly: skip_cycle = True
     if ref.time.size < 12: skip_cycle = True
@@ -1172,10 +1182,10 @@ def AnalysisMeanStateSites(ref,com,**keywords):
     # Unit conversions
     def _convert(var,unit):
         if type(var) == type({}):
-            for key in var.keys(): var[key].convert(unit)                
+            for key in var.keys(): var[key].convert(unit)
         else:
             var.convert(unit)
-            
+
     if table_unit is not None:
         for var in [ref_period_mean,com_period_mean,ref_union_mean,com_union_mean,ref_comp_mean,com_comp_mean]:
             _convert(var,table_unit)
@@ -1311,7 +1321,7 @@ def AnalysisMeanStateSpace(ref,com,**keywords):
     rmse_score_basis  = keywords.get("rmse_score_basis" ,"cycle")
     ILAMBregions      = Regions()
     spatial           = ref.spatial
-    
+
     # Convert str types to booleans
     if type(skip_rmse) == type(""):
         skip_rmse = (skip_rmse.lower() == "true")
@@ -1337,7 +1347,7 @@ def AnalysisMeanStateSpace(ref,com,**keywords):
     unit  = REF.unit
     area  = REF.area
     ndata = REF.ndata
-            
+
     # Find the mean values over the time period
     if ref_timeint is None:
         ref_timeint = ref.integrateInTime(mean=True).convert(plot_unit)
@@ -1550,7 +1560,7 @@ def AnalysisMeanStateSpace(ref,com,**keywords):
                         time = COM.time, time_bnds = COM.time_bnds,
                         lat  = lat, lat_bnds = lat_bnds, lon = lon, lon_bnds = lon_bnds,
                         area = COM.area, ndata = COM.ndata).convert(plot_unit)
-        
+
         try:
             import psutil
             comm = MPI.COMM_WORLD
@@ -1562,7 +1572,7 @@ def AnalysisMeanStateSpace(ref,com,**keywords):
             logger.info(msg)
         except:
             pass
-        
+
         del COM
         crmse = cREF.rmse(cCOM).convert(plot_unit)
         del cREF,cCOM
@@ -1607,7 +1617,7 @@ def AnalysisMeanStateSpace(ref,com,**keywords):
                 rmse_score.name = "RMSE Score %s" % region
                 rmse_score.toNetCDF4(dataset,group="MeanState")
         del rmse,crmse,rmse_score_map
-        
+
     return
 
 def ClipTime(v,t0,tf):
@@ -1691,7 +1701,7 @@ def MakeComparable(ref,com,**keywords):
     prune_sites = keywords.get("prune_sites",False)
     site_atol   = keywords.get("site_atol",0.25)
     allow_diff_times = keywords.get("allow_diff_times",False)
-    
+
     # If one variable is temporal, then they both must be
     if ref.temporal != com.temporal:
         msg  = "%s Datasets are not uniformly temporal: " % logstring
@@ -1820,10 +1830,16 @@ def MakeComparable(ref,com,**keywords):
         if clip_ref:
 
             # We will clip the reference dataset too
+#            print(t0)
+#            print(com.time_bnds[0,0])
+#            print(tf)
+#            print(com.time_bnds[-1,1])
             t0  = max(t0,com.time_bnds[ 0,0])
             tf  = min(tf,com.time_bnds[-1,1])
             ref = ref.trim(t=[t0,tf])
-        
+#            print(ref.time_bnds[0,0])
+#            print(ref.time_bnds[-1,1])
+
         # Check that we now are on the same time intervals
         if not allow_diff_times:
             if ref.time.size != com.time.size:

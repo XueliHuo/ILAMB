@@ -149,7 +149,7 @@ class Confrontation(object):
         self.extents        = np.asarray([[-90.,+90.],[-180.,+180.]])
         self.study_limits   = []
         self.cweight         = 1
-        
+
         # Make sure the source data exists
 
         if not os.path.isfile(self.source):
@@ -187,7 +187,7 @@ class Confrontation(object):
                 tdata = cf.num2date(tdata,units=t.units,calendar=t.calendar)
                 y0 = tdata[0].year
                 yf = tdata[1].year
-                
+
         if self.hasSites:
             pages.append(post.HtmlSitePlotsPage("SitePlots","Site Plots"))
             pages[-1].setHeader("CNAME / RNAME / MNAME")
@@ -228,7 +228,7 @@ class Confrontation(object):
                 return len(order)
             attrs = dset.ncattrs()
             attrs = sorted(attrs,key=_attribute_sort)
-            
+
             for attr in attrs:
                 try:
                     val = dset.getncattr(attr)
@@ -301,6 +301,9 @@ class Confrontation(object):
                                   final_time   = obs.time_bnds[-1,1],
                                   lats         = None if obs.spatial else obs.lat,
                                   lons         = None if obs.spatial else obs.lon)
+#        if self.variable == 'albedo':
+#            print(m.name)
+#            print(self.longname)
         obs,mod = il.MakeComparable(obs,mod,
                                     mask_ref  = True,
                                     clip_ref  = True,
@@ -421,7 +424,7 @@ class Confrontation(object):
                 self.pruneRegions(Variable(filename = benchmark_file[0],
                                            variable_name = Vs[0],
                                            groupname = "MeanState"))
-        
+
         # Determine the min/max of variables over all models
         limits = {}
         for fname in filelist:
@@ -467,7 +470,7 @@ class Confrontation(object):
         for pname in limits.keys():
             if "data" in limits[pname]:
                 limits[pname]["min"],limits[pname]["max"] = np.percentile(limits[pname]["data"],[1,99])
-                
+
         # Second pass to plot legends (FIX: only for master?)
         for pname in limits.keys():
 
@@ -486,7 +489,7 @@ class Confrontation(object):
             if "score" in pname:
                 limits[pname]["min"] = 0
                 limits[pname]["max"] = 1
-                
+
             limits[pname]["cmap"] = opts["cmap"]
             if limits[pname]["cmap"] == "choose": limits[pname]["cmap"] = self.cmap
             if "score" in pname:
@@ -920,7 +923,7 @@ class Confrontation(object):
             return Variable(filename      = filename,
                             groupname     = "MeanState",
                             variable_name = key[0])
-        
+
         # If there are no relationships to analyze, get out of here
         if self.relationships is None: return
 
@@ -974,7 +977,7 @@ class Confrontation(object):
                         if a.ndata and     b.ndata: assert(np.allclose(a.lat,b.lat)*np.allclose(a.lon,b.lon))
                         if a.ndata and not b.ndata: src[j] = b.extractDatasites(a.lat,a.lon)
                 ref_ind,ref_dep,com_ind,com_dep = src
-                
+
                 # create relationships
                 ref = Relationship(ref_ind,ref_dep,order=1)
                 com = Relationship(com_ind,com_dep,order=1)
@@ -1011,7 +1014,7 @@ class Confrontation(object):
                 for region in self.regions:
 
                     ref.makeComparable(com,region=region)
-                    
+
                     # Make the plots
                     fig,ax = plt.subplots(figsize=(6,5.25),tight_layout=True)
                     ref.plotDistribution(ax,region=region)

@@ -9,6 +9,9 @@ from . import ilamblib as il
 from . import Post as post
 import numpy as np
 import matplotlib.pyplot as plt
+#import sys
+
+#np.set_printoptions(threshold=sys.maxsize)
 
 def _shiftLon(lon):
     return (lon<=180)*lon + (lon>180)*(lon-360) + (lon<-180)*360
@@ -35,7 +38,7 @@ def _createBnds(x):
         x_bnds[ 0,0] = x[ 0] - 0.5*(x[ 1]-x[ 0])
         x_bnds[-1,1] = x[-1] + 0.5*(x[-1]-x[-2])
     return x_bnds
-        
+
 class Variable:
     r"""A class for managing variables and their analysis.
 
@@ -144,7 +147,7 @@ class Variable:
         self.cbounds = cbounds
         self.calendar = calendar
         self.attr = attr
-        
+
         # Handle time data
         self.time      = time      # time data
         self.time_bnds = time_bnds # bounds on time
@@ -176,17 +179,17 @@ class Variable:
                 self.spatial = False
                 self.ndata   = 1
                 self.data    = self.data.reshape(self.data.shape[:-2]+(1,))
-        
+
         if self.spatial is False:
-            
+
             # Shift possible values on [0,360] to [-180,180]
             if self.lon      is not None: self.lon      = _shiftLon(self.lon     )
             if self.lon_bnds is not None: self.lon_bnds = _shiftLon(self.lon_bnds)
 
         else:
-            
+
             # Exception for CABLE, flips if monotonically decreasing
-            if np.all(np.diff(self.lat)<0):  
+            if np.all(np.diff(self.lat)<0):
                 self.lat      = self.lat     [::-1     ]
                 self.data     = self.data[...,::-1,:   ]
                 if self.lat_bnds is not None: self.lat_bnds = self.lat_bnds[::-1,::-1]
@@ -202,15 +205,15 @@ class Variable:
                                               data     = self.data,
                                               area     = self.area)
             self.lon,self.lon_bnds,self.data,self.area = out
-            
+
             # Finally create bounds if they are not there
             if self.lat_bnds is None: self.lat_bnds = _createBnds(self.lat)
             if self.lon_bnds is None: self.lon_bnds = _createBnds(self.lon)
-            
+
             # Fix potential problems with rolling the axes of the lon_bnds
             self.lat_bnds = self.lat_bnds.clip(- 90,+ 90)
             self.lon_bnds = self.lon_bnds.clip(-180,+180)
-            
+
             # Make sure that the value lies within the bounds
             assert np.all((self.lat>=self.lat_bnds[:,0])*(self.lat<=self.lat_bnds[:,1]))
             assert np.all((self.lon>=self.lon_bnds[:,0])*(self.lon<=self.lon_bnds[:,1]))
@@ -330,6 +333,8 @@ class Variable:
         # approximate the integral by nodal integration (rectangle rule)
         np.seterr(over='ignore',under='ignore')
         integral = (self.data[ind]*dt).sum(axis=0)
+#        print(integral)
+#        print(integral.shape)
         integral_bnd = None
         if self.data_bnds is not None:
             integral_bnd = np.ma.asarray([((((self.data_bnds[...,0])[ind])*dt).sum(axis=0)).T,
@@ -341,7 +346,7 @@ class Variable:
         if self.data.ndim > 1 and self.data.mask.size > 1:
             mask = np.apply_along_axis(np.all,0,self.data.mask[ind])
         integral = np.ma.masked_array(integral,mask=mask,copy=False)
-            
+
         # handle units
         unit = Unit(self.unit)
         name = self.name + "_integrated_over_time"
@@ -379,8 +384,8 @@ class Variable:
             unit0.convert(integral,unit,inplace=True)
             if integral_bnd is not None:
                 unit0.convert(integral_bnd,unit,inplace=True)
-                
-                
+
+
         return Variable(data       = integral,
                         data_bnds   = integral_bnd,
                         unit       = "%s" % unit,
@@ -853,7 +858,7 @@ class Variable:
         if unit is None: return self
         src_unit = Unit(self.unit)
         tar_unit = Unit(     unit)
-        mask = self.data.mask        
+        mask = self.data.mask
         mass_density = Unit("kg m-3")
         molar_density = Unit("g mol-1")
         if ((src_unit/tar_unit)/mass_density).is_dimensionless():
@@ -1047,7 +1052,7 @@ class Variable:
 
         grp = dset
         if self.data.size == 1:
-            
+
             # we are writing out a scalar so we add it into a special
             # subgroup for scalars
             if "scalars" not in dset.groups:
@@ -1089,7 +1094,7 @@ class Variable:
                 VB.up99 = per[2]
                 VB.max = per[3]
                 VB[...] = self.data_bnds
-                
+
         # optionally write out more attributes
         if attributes:
             for key in attributes.keys():
@@ -1178,9 +1183,9 @@ class Variable:
             # determine the plotting extents
             percent_pad = 0.2
             if self.ndata is None:
-                
+
                 lat_empty = np.where(self.data.mask.all(axis=-1)==False)[0]
-                lon_empty = np.where(self.data.mask.all(axis=-2)==False)[0]        
+                lon_empty = np.where(self.data.mask.all(axis=-2)==False)[0]
                 extents = [self.lon_bnds[lon_empty[ 0],0],
                            self.lon_bnds[lon_empty[-1],1],
                            self.lat_bnds[lat_empty[ 0],0],
@@ -1190,7 +1195,7 @@ class Variable:
                 extents[0] = max(extents[0]-dx,-180); extents[1] = min(extents[1]+dx,+180)
                 extents[2] = max(extents[2]-dy,- 90); extents[3] = min(extents[3]+dy,+ 90)
                 lon_mid    = 0.5*(extents[0]+extents[1])
-                
+
                 # ...but the data might cross the dateline, but not be global
                 if(lon_empty[ 0]== 0 and
                    lon_empty[-1]==(self.lon.size-1) and
@@ -1201,12 +1206,12 @@ class Variable:
                     extents[1] = wrap_lon.max()
                     dx = percent_pad*(extents[1]-extents[0])
                     extents[0] -= dx; extents[1] += dx
-                    
-                    # find the middle centroid by mean angle 
+
+                    # find the middle centroid by mean angle
                     lons = self.lon[np.where(self.data.mask.all(axis=-2)==False)[0]]
                     lons = lons/360*2*np.pi
                     lon_mid = np.arctan2(np.sin(lons).mean(),np.cos(lons).mean())/2/np.pi*360
-                
+
             else:
                 extents = [self.lon.min(),self.lon.max(),
                            self.lat.min(),self.lat.max()]
@@ -1231,7 +1236,7 @@ class Variable:
                     extents = [-180,180,-90,90]
                     aspect_ratio = 0.5
                     lon_mid = 0.
-                    
+
             # make the plot
             w = 7.5; h = w*aspect_ratio
             fig,ax = plt.subplots(figsize=(w,h),
@@ -1255,9 +1260,9 @@ class Variable:
             ax.set_extent(extents,ccrs.PlateCarree())
             if cbar: fig.colorbar(p,orientation='horizontal',pad=0.05,label=label)
             if rem_mask is not None: self.data.mask = rem_mask
-            
+
         return ax
-    
+
     def interpolate(self,time=None,lat=None,lon=None,lat_bnds=None,lon_bnds=None,itype='nearestneighbor'):
         """Use nearest-neighbor interpolation to interpolate time and/or space at given values.
 
@@ -1618,7 +1623,7 @@ class Variable:
                        ndata = self.ndata).rms()
         var.name = "var_of_%s" % self.name
         return var
-        
+
     def interannualVariability(self):
         """Computes the interannual variability.
 
@@ -1813,7 +1818,7 @@ class Variable:
         """
         def _whichInterval(val,bnds):
             if val < bnds.min(): val = bnds.min()
-            if val > bnds.max(): val = bnds.max()            
+            if val > bnds.max(): val = bnds.max()
             ind = np.where((val>=bnds[:,0])*(val<=bnds[:,1]))[0]
             assert ind.size <= 2
             ind = ind[0]
@@ -1828,7 +1833,7 @@ class Variable:
             self.lat_bnds = self.lat_bnds[i:j]
             self.data     = self.data[...,i:j,:]
             if self.data_bnds is not None:
-                self.data_bnds = self.data_bnds[...,i:j,:,:]                
+                self.data_bnds = self.data_bnds[...,i:j,:,:]
             self.area     = self.area[    i:j,:]
         if lon is not None:
             assert len(lon) == 2
@@ -1839,7 +1844,7 @@ class Variable:
             self.lon_bnds = self.lon_bnds[i:j]
             self.data     = self.data[...,i:j]
             if self.data_bnds is not None:
-                self.data_bnds = self.data_bnds[...,i:j,:]                
+                self.data_bnds = self.data_bnds[...,i:j,:]
             self.area     = self.area[  :,i:j]
         if t is not None:
             assert len(t) == 2
